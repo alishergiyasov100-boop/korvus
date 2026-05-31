@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,23 +25,30 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -51,10 +59,13 @@ import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.ui.components.LogoMark
 import com.musornibak.korvus.ui.components.MessageBubble
 import com.musornibak.korvus.ui.components.ModelPickerChip
+import com.musornibak.korvus.ui.drawer.ChatDrawerContent
 import com.musornibak.korvus.ui.settings.SettingsSheet
 import com.musornibak.korvus.ui.theme.KorvusInkFaint
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     userName: String,
@@ -64,6 +75,8 @@ fun ChatScreen(
     val isSending by vm.isSending.collectAsStateWithLifecycle()
     val status by vm.statusLine.collectAsStateWithLifecycle()
     val selectedId by vm.selectedModelId.collectAsStateWithLifecycle()
+    val threads by vm.threads.collectAsStateWithLifecycle()
+    val activeThreadId by vm.activeThreadId.collectAsStateWithLifecycle()
     val selectedModel = ModelRegistry.byId(selectedId)
 
     var input by remember { mutableStateOf("") }
@@ -71,98 +84,126 @@ fun ChatScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     if (settingsOpen) {
         SettingsSheet(onDismiss = { settingsOpen = false })
     }
 
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(messages.size, activeThreadId) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
-    ) {
-        TopBar(
-            empty = messages.isEmpty(),
-            onClear = { vm.clearChat() },
-            onSettings = { settingsOpen = true }
-        )
-
-        if (messages.isEmpty()) {
-            EmptyHero(userName = userName, modifier = Modifier.weight(1f))
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = MaterialTheme.colorScheme.background,
+                drawerContentColor = MaterialTheme.colorScheme.onBackground
             ) {
-                items(messages, key = { it.ts }) { msg ->
-                    MessageBubble(msg)
-                }
-                if (status != null) {
-                    item {
-                        StatusLine(text = status!!)
+                ChatDrawerContent(
+                    threads = threads,
+                    activeId = activeThreadId,
+                    onNewChat = {
+                        vm.newThread()
+                        scope.launch { drawerState.close() }
+                    },
+                    onSelect = { id ->
+                        vm.selectThread(id)
+                        scope.launch { drawerState.close() }
+                    },
+                    onDelete = { id -> vm.deleteThread(id) },
+                    onSettings = {
+                        settingsOpen = true
+                        scope.launch { drawerState.close() }
+                    }
+                )
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
+        ) {
+            TopBar(
+                empty = messages.isEmpty(),
+                onMenu = { scope.launch { drawerState.open() } },
+                onClear = { vm.clearChat() }
+            )
+
+            if (messages.isEmpty()) {
+                EmptyHero(userName = userName, modifier = Modifier.weight(1f))
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(messages, key = { it.ts }) { msg ->
+                        MessageBubble(msg)
+                    }
+                    if (status != null) {
+                        item { StatusLine(text = status!!) }
                     }
                 }
             }
-        }
 
-        InputBar(
-            value = input,
-            onChange = { input = it },
-            enabled = !isSending,
-            selectedEmoji = selectedModel.emoji,
-            selectedLabel = selectedModel.displayName,
-            onSend = {
-                if (input.isNotBlank()) {
-                    vm.send(input, userName)
-                    input = ""
-                    keyboard?.hide()
+            InputBar(
+                value = input,
+                onChange = { input = it },
+                enabled = !isSending,
+                onSend = {
+                    if (input.isNotBlank()) {
+                        vm.send(input, userName)
+                        input = ""
+                        keyboard?.hide()
+                    }
+                },
+                modelPicker = {
+                    ModelPickerChip(selected = selectedModel) { vm.selectModel(it.id) }
                 }
-            },
-            modelPicker = {
-                ModelPickerChip(selected = selectedModel) { vm.selectModel(it.id) }
-            }
-        )
+            )
+        }
     }
 }
 
 @Composable
-private fun TopBar(empty: Boolean, onClear: () -> Unit, onSettings: () -> Unit) {
+private fun TopBar(empty: Boolean, onMenu: () -> Unit, onClear: () -> Unit) {
     val logoSize by animateDpAsState(
-        targetValue = if (empty) 0.dp else 28.dp,
+        targetValue = if (empty) 0.dp else 30.dp,
         animationSpec = tween(320),
         label = "logo-size"
     )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .heightIn(min = 56.dp)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(onClick = onMenu, modifier = Modifier.size(48.dp)) {
+            Icon(Icons.Default.Menu, contentDescription = "Чаты", tint = KorvusInkSoft)
+        }
         if (logoSize > 0.dp) {
             LogoMark(size = logoSize, animated = false)
             Spacer(Modifier.width(8.dp))
             Text(
                 "Корвус",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold
             )
         }
         Spacer(Modifier.weight(1f))
         if (!empty) {
-            IconButton(onClick = onClear) {
+            IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Default.DeleteOutline, contentDescription = "Очистить чат", tint = KorvusInkSoft)
             }
-        }
-        IconButton(onClick = onSettings) {
-            Icon(Icons.Default.Settings, contentDescription = "Настройки", tint = KorvusInkSoft)
         }
     }
 }
@@ -176,7 +217,7 @@ private fun EmptyHero(userName: String, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        LogoMark(size = 156.dp, animated = true)
+        LogoMark(size = 160.dp, animated = true)
         Spacer(Modifier.height(28.dp))
         Text(
             "Привет, $userName.",
@@ -197,18 +238,18 @@ private fun StatusLine(text: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CircularProgressIndicator(
             strokeWidth = 2.dp,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(16.dp)
         )
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
         Text(
             text,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.bodyMedium,
             color = KorvusInkFaint
         )
     }
@@ -219,52 +260,52 @@ private fun InputBar(
     value: String,
     onChange: (String) -> Unit,
     enabled: Boolean,
-    selectedEmoji: String,
-    selectedLabel: String,
     onSend: () -> Unit,
     modelPicker: @Composable () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 14.dp))
+            .padding(PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 16.dp))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(PaddingValues(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 8.dp))
+                .padding(PaddingValues(start = 12.dp, end = 8.dp, top = 10.dp, bottom = 8.dp))
         ) {
             Column {
                 OutlinedTextField(
                     value = value,
                     onValueChange = onChange,
-                    placeholder = { Text("Спроси Корвуса…") },
+                    placeholder = { Text("Спроси Корвуса…", style = MaterialTheme.typography.bodyLarge) },
                     enabled = enabled,
                     minLines = 1,
                     maxLines = 6,
-                    shape = RoundedCornerShape(16.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    shape = RoundedCornerShape(20.dp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
                     )
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
                 ) {
                     modelPicker()
                     Spacer(Modifier.weight(1f))
                     IconButton(
                         onClick = onSend,
-                        enabled = enabled && value.isNotBlank()
+                        enabled = enabled && value.isNotBlank(),
+                        modifier = Modifier.size(52.dp)
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Send,

@@ -7,7 +7,8 @@ import com.musornibak.korvus.data.model.Message
 import com.musornibak.korvus.data.model.ModelInfo
 import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.data.prefs.UserPrefs
-import com.musornibak.korvus.data.store.MessageStore
+import com.musornibak.korvus.data.store.ThreadInfo
+import com.musornibak.korvus.data.store.ThreadStore
 import com.musornibak.korvus.net.ChatRouter
 import com.musornibak.korvus.tools.ToolRuntime
 import com.musornibak.korvus.widget.KorvusWidgetProvider
@@ -20,9 +21,11 @@ import kotlinx.coroutines.launch
 class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     private val prefs = UserPrefs(app)
-    private val store = MessageStore(app)
+    private val store = ThreadStore(app)
 
     val messages: StateFlow<List<Message>> = store.messages
+    val threads: StateFlow<List<ThreadInfo>> = store.threads
+    val activeThreadId: StateFlow<String?> = store.activeId
 
     private val _isSending = MutableStateFlow(false)
     val isSending: StateFlow<Boolean> = _isSending.asStateFlow()
@@ -36,13 +39,38 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         f.asStateFlow()
     }
 
+    init {
+        viewModelScope.launch { store.ensureInitial() }
+    }
+
     fun selectModel(id: String) {
         prefs.setSelectedModel(id)
     }
 
+    fun newThread() {
+        viewModelScope.launch {
+            store.createThread()
+            refreshWidget()
+        }
+    }
+
+    fun selectThread(id: String) {
+        viewModelScope.launch {
+            store.setActive(id)
+            refreshWidget()
+        }
+    }
+
+    fun deleteThread(id: String) {
+        viewModelScope.launch {
+            store.deleteThread(id)
+            refreshWidget()
+        }
+    }
+
     fun clearChat() {
         viewModelScope.launch {
-            store.clear()
+            store.clearActive()
             refreshWidget()
         }
     }
@@ -53,7 +81,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _isSending.value = true
             try {
-                store.append(Message(role = "user", content = text))
+                store.ensureInitial()
+                store.appendActive(Message(role = "user", content = text))
                 refreshWidget()
 
                 val modelId = prefs.selectedModelId.first()
@@ -65,7 +94,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 val systemPrompt = buildSystemPrompt(userName)
                 runAgenticLoop(router, model, systemPrompt)
             } catch (t: Throwable) {
-                store.append(Message(role = "assistant", content = "⚠️ Ошибка: ${t.message ?: t::class.simpleName}"))
+                store.appendActive(Message(role = "assistant", content = "⚠️ Ошибка: ${t.message ?: t::class.simpleName}"))
                 refreshWidget()
             } finally {
                 _isSending.value = false
@@ -80,21 +109,20 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         systemPrompt: String,
         maxIterations: Int = 6
     ) {
-        var model = initialModel
+        val model = initialModel
         repeat(maxIterations) { iteration ->
-            _statusLine.value = if (iteration == 0) "${model.emoji} ${model.displayName} думает…" else "Tool round ${iteration}…"
+            _statusLine.value = if (iteration == 0) "${model.displayName} думает…" else "Tool round ${iteration}…"
             val history = messages.value
             val result = router.ask(model, history, systemPrompt)
             if (result.fallbackFrom != null) {
                 _statusLine.value = "⚠ ${result.fallbackFrom} → ${result.usedModel.displayName}"
             }
             val text = result.content
-            store.append(Message(role = "assistant", content = text, modelId = result.usedModel.id))
+            store.appendActive(Message(role = "assistant", content = text, modelId = result.usedModel.id))
             refreshWidget()
 
             val calls = ToolRuntime.parseToolCalls(text)
-            if (calls.isEmpty()) return  // final assistant message — exit
-            // Execute first tool call, feed result back as user turn
+            if (calls.isEmpty()) return
             val call = calls.first()
             _statusLine.value = "🔧 ${call.name}…"
             val outRaw = try {
@@ -103,11 +131,10 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 "ERROR: ${t.message}"
             }
             val outClipped = if (outRaw.length > 8000) outRaw.take(8000) + "\n…[обрезано до 8000 символов]" else outRaw
-            store.append(Message(role = "user", content = "[tool result: ${call.name}]\n$outClipped"))
+            store.appendActive(Message(role = "user", content = "[tool result: ${call.name}]\n$outClipped"))
             refreshWidget()
-            // continue loop
         }
-        store.append(Message(role = "assistant", content = "⚠ Цикл инструментов остановлен (лимит $maxIterations итераций)."))
+        store.appendActive(Message(role = "assistant", content = "⚠ Цикл инструментов остановлен (лимит $maxIterations итераций)."))
         refreshWidget()
     }
 

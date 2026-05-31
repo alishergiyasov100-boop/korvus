@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -26,8 +27,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,15 +49,16 @@ fun ModelPickerChip(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .heightIn(min = 44.dp)
             .background(KorvusOrangeBg, RoundedCornerShape(50))
             .clickable { open = true }
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Text(selected.emoji, style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.width(6.dp))
+        ProviderIcon(model = selected, size = 26.dp)
+        Spacer(Modifier.width(8.dp))
         Text(
             text = selected.displayName,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -97,16 +97,16 @@ private fun ModelPickerSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                "Выбор модели",
+                "Модель",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                "HF — стабильно, твой ключ. Pollinations — без лимитов, нестабильно.",
+                "HF — стабильно, твой ключ. Pollinations — без лимитов, иногда падает.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -116,7 +116,7 @@ private fun ModelPickerSheet(
             ModelRegistry.ALL.filter { it.provider == Provider.HF }.forEach { m ->
                 ModelRow(m, m.id == currentId) { onPick(m) }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(14.dp))
             ProviderHeader("Pollinations")
             ModelRegistry.ALL.filter { it.provider == Provider.POLLINATIONS }.forEach { m ->
                 ModelRow(m, m.id == currentId) { onPick(m) }
@@ -130,9 +130,9 @@ private fun ModelPickerSheet(
 private fun ProviderHeader(name: String) {
     Text(
         name,
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.labelMedium,
         color = KorvusInkSoft,
-        modifier = Modifier.padding(vertical = 6.dp)
+        modifier = Modifier.padding(vertical = 8.dp)
     )
 }
 
@@ -143,20 +143,29 @@ private fun ModelRow(model: ModelInfo, selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 64.dp)
             .padding(vertical = 4.dp)
             .background(
                 if (selected) KorvusOrangeBg else MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(14.dp)
+                RoundedCornerShape(16.dp)
             )
-            .border(1.dp, border, RoundedCornerShape(14.dp))
+            .border(1.5.dp, border, RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .padding(PaddingValues(horizontal = 14.dp, vertical = 12.dp))
     ) {
-        Text(model.emoji, style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.width(12.dp))
+        ProviderIcon(model = model, size = 42.dp)
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(model.displayName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text(model.tagline, style = MaterialTheme.typography.bodyMedium, color = KorvusInkSoft)
+            Text(
+                model.displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                model.tagline,
+                style = MaterialTheme.typography.bodyMedium,
+                color = KorvusInkSoft
+            )
         }
     }
 }

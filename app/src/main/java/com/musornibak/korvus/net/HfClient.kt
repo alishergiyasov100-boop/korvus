@@ -1,6 +1,8 @@
 package com.musornibak.korvus.net
 
 import com.musornibak.korvus.data.model.Message
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -25,7 +27,7 @@ class HfClient(private val token: String) {
         systemPrompt: String,
         maxTokens: Int = 2048,
         temperature: Double = 0.7
-    ): String {
+    ): String = withContext(Dispatchers.IO) {
         val msgArray: JsonArray = buildJsonArray {
             add(buildJsonObject {
                 put("role", "system")
@@ -63,7 +65,7 @@ class HfClient(private val token: String) {
             val choices = parsed["choices"]?.jsonArray ?: throw RuntimeException("Нет choices")
             val first = choices.firstOrNull()?.jsonObject ?: throw RuntimeException("choices пуст")
             val message = first["message"]?.jsonObject ?: throw RuntimeException("Нет message")
-            return message["content"]?.jsonPrimitive?.content ?: ""
+            message["content"]?.jsonPrimitive?.content ?: ""
         }
     }
 }
