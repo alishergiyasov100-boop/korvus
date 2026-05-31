@@ -30,23 +30,25 @@ class UserPrefs(private val ctx: Context) {
     val selectedModelId: Flow<String> = ctx.dataStore.data.map { it[keySelectedModel] ?: ModelRegistry.DEFAULT_ID }
     val autoFailover: Flow<Boolean> = ctx.dataStore.data.map { (it[keyAutoFailover] ?: "1") == "1" }
 
+    suspend fun saveAll(
+        userName: String?,
+        hfToken: String?,
+        completionsToken: String?,
+        autoFailover: Boolean?
+    ) {
+        ctx.dataStore.edit { p ->
+            userName?.trim()?.takeIf { it.isNotBlank() }?.let { p[keyUserName] = it }
+            hfToken?.let { p[keyHfToken] = it.trim() }
+            completionsToken?.let { p[keyCompletionsToken] = it.trim() }
+            autoFailover?.let { p[keyAutoFailover] = if (it) "1" else "0" }
+        }
+    }
+
     fun setUserName(name: String) {
         scope.launch { ctx.dataStore.edit { it[keyUserName] = name.trim() } }
     }
 
-    fun setHfToken(token: String) {
-        scope.launch { ctx.dataStore.edit { it[keyHfToken] = token.trim() } }
-    }
-
-    fun setCompletionsToken(token: String) {
-        scope.launch { ctx.dataStore.edit { it[keyCompletionsToken] = token.trim() } }
-    }
-
     fun setSelectedModel(id: String) {
         scope.launch { ctx.dataStore.edit { it[keySelectedModel] = id } }
-    }
-
-    fun setAutoFailover(on: Boolean) {
-        scope.launch { ctx.dataStore.edit { it[keyAutoFailover] = if (on) "1" else "0" } }
     }
 }

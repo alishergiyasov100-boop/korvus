@@ -78,28 +78,12 @@ object ModelRegistry {
             tagline = "Google · free"
         ),
         ModelInfo(
-            id = "claude-opus-4-8",
-            displayName = "Claude Opus 4.8",
+            id = "poll-openai-fast",
+            displayName = "GPT-OSS 20B",
             provider = Provider.POLLINATIONS,
-            providerModelId = "claude",
-            emoji = "\uD83D\uDC51",
-            tagline = "Frontier"
-        ),
-        ModelInfo(
-            id = "gpt-5-2",
-            displayName = "GPT-5.2",
-            provider = Provider.POLLINATIONS,
-            providerModelId = "openai-large",
-            emoji = "\uD83D\uDE80",
-            tagline = "Универсал"
-        ),
-        ModelInfo(
-            id = "o5-reasoning",
-            displayName = "o5 Reasoning",
-            provider = Provider.POLLINATIONS,
-            providerModelId = "openai-reasoning",
-            emoji = "\uD83D\uDD2C",
-            tagline = "Глубокий thinking"
+            providerModelId = "openai-fast",
+            emoji = "\u26A1",
+            tagline = "Анонимный фолбэк"
         )
     )
 

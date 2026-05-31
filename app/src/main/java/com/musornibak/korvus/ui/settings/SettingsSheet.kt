@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,17 +41,20 @@ import com.musornibak.korvus.KorvusApp
 import com.musornibak.korvus.data.prefs.UserPrefs
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSheet(onDismiss: () -> Unit) {
     val prefs = remember { UserPrefs(KorvusApp.instance) }
     val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
 
     var token by remember { mutableStateOf("") }
     var cpToken by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var failover by remember { mutableStateOf(true) }
+    var saving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         token = prefs.hfToken.first()
@@ -75,130 +79,55 @@ fun SettingsSheet(onDismiss: () -> Unit) {
             Text("Настройки", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(20.dp))
 
-            Text(
-                "HuggingFace токен",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+            FieldLabel("HuggingFace токен")
             Spacer(Modifier.height(6.dp))
             Text(
-                "hf_… с правами Inference. Без него работают только Pollinations.",
+                "hf_… с правами Inference. Без него HF-модели вернут 401.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft
             )
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = token,
-                    onValueChange = { token = it },
-                    placeholder = { Text("hf_…") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(58.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        val clip = clipboard.getText()?.text
-                        if (!clip.isNullOrBlank()) token = clip.trim()
-                    },
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ContentPaste,
-                        contentDescription = "Вставить из буфера",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+            TokenField(
+                value = token,
+                onChange = { token = it },
+                placeholder = "hf_…",
+                onPaste = {
+                    val clip = clipboard.getText()?.text
+                    if (!clip.isNullOrBlank()) token = clip.trim()
                 }
-            }
+            )
 
             Spacer(Modifier.height(24.dp))
-            Text(
-                "Completions.me ключ",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+            FieldLabel("Completions.me ключ")
             Spacer(Modifier.height(6.dp))
             Text(
-                "sk-cp_… с completions.me. Free Opus 4.6, GPT-5.2, Gemini 3.1 Pro. Sketchy сервис — не лей секреты в чат.",
+                "sk-cp_… Free Opus 4.6, GPT-5.2, Gemini 3.1 Pro. Sketchy сервис — не лей секреты в чат.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft
             )
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = cpToken,
-                    onValueChange = { cpToken = it },
-                    placeholder = { Text("sk-cp_…") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(58.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        val clip = clipboard.getText()?.text
-                        if (!clip.isNullOrBlank()) cpToken = clip.trim()
-                    },
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ContentPaste,
-                        contentDescription = "Вставить из буфера",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+            TokenField(
+                value = cpToken,
+                onChange = { cpToken = it },
+                placeholder = "sk-cp_…",
+                onPaste = {
+                    val clip = clipboard.getText()?.text
+                    if (!clip.isNullOrBlank()) cpToken = clip.trim()
                 }
-            }
+            )
 
             Spacer(Modifier.height(24.dp))
-            Text(
-                "Имя / прозвище",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+            FieldLabel("Имя / прозвище")
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    placeholder = { Text("Алишер") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(58.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        val clip = clipboard.getText()?.text
-                        if (!clip.isNullOrBlank()) name = clip.trim()
-                    },
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ContentPaste,
-                        contentDescription = "Вставить из буфера",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+            TokenField(
+                value = name,
+                onChange = { name = it },
+                placeholder = "Алишер",
+                onPaste = {
+                    val clip = clipboard.getText()?.text
+                    if (!clip.isNullOrBlank()) name = clip.trim()
                 }
-            }
+            )
 
             Spacer(Modifier.height(24.dp))
             Row(
@@ -206,11 +135,7 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        "Авто-failover",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    FieldLabel("Авто-failover")
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Если выбранная модель упадёт — Корвус молча переключится на запасную",
@@ -225,11 +150,18 @@ fun SettingsSheet(onDismiss: () -> Unit) {
             Spacer(Modifier.height(28.dp))
             Button(
                 onClick = {
-                    prefs.setHfToken(token)
-                    prefs.setCompletionsToken(cpToken)
-                    if (name.isNotBlank()) prefs.setUserName(name)
-                    prefs.setAutoFailover(failover)
-                    onDismiss()
+                    if (saving) return@Button
+                    saving = true
+                    scope.launch {
+                        prefs.saveAll(
+                            userName = name.takeIf { it.isNotBlank() },
+                            hfToken = token,
+                            completionsToken = cpToken,
+                            autoFailover = failover
+                        )
+                        saving = false
+                        onDismiss()
+                    }
                 },
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -240,9 +172,51 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                     .fillMaxWidth()
                     .height(58.dp)
             ) {
-                Text("Сохранить", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (saving) "Сохраняю…" else "Сохранить",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+}
+
+@Composable
+private fun TokenField(
+    value: String,
+    onChange: (String) -> Unit,
+    placeholder: String,
+    onPaste: () -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            placeholder = { Text(placeholder) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(58.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            )
+        )
+        Spacer(Modifier.width(8.dp))
+        IconButton(onClick = onPaste, modifier = Modifier.size(52.dp)) {
+            Icon(
+                Icons.Default.ContentPaste,
+                contentDescription = "Вставить",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

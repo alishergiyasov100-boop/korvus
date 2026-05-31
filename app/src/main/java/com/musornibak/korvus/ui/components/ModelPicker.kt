@@ -83,6 +83,14 @@ fun ModelPickerChip(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ModelPickerSheetExposed(
+    currentId: String,
+    onDismiss: () -> Unit,
+    onPick: (ModelInfo) -> Unit
+) = ModelPickerSheet(currentId, onDismiss, onPick)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun ModelPickerSheet(
     currentId: String,
     onDismiss: () -> Unit,

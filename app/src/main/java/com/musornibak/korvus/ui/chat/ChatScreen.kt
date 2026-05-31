@@ -1,8 +1,7 @@
 package com.musornibak.korvus.ui.chat
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -25,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -55,14 +57,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.musornibak.korvus.data.model.ModelInfo
 import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.ui.components.LogoMark
 import com.musornibak.korvus.ui.components.MessageBubble
-import com.musornibak.korvus.ui.components.ModelPickerChip
+import com.musornibak.korvus.ui.components.ProviderIcon
 import com.musornibak.korvus.ui.drawer.ChatDrawerContent
 import com.musornibak.korvus.ui.settings.SettingsSheet
 import com.musornibak.korvus.ui.theme.KorvusInkFaint
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
+import com.musornibak.korvus.ui.theme.KorvusOrangeBg
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +85,7 @@ fun ChatScreen(
 
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
+    var pickerOpen by remember { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
 
@@ -127,10 +132,14 @@ fun ChatScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding()
         ) {
             TopBar(
-                empty = messages.isEmpty(),
+                model = selectedModel,
+                showClear = messages.isNotEmpty(),
                 onMenu = { scope.launch { drawerState.open() } },
+                onPicker = { pickerOpen = true },
                 onClear = { vm.clearChat() }
             )
 
@@ -142,7 +151,7 @@ fun ChatScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 14.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(messages, key = { it.ts }) { msg ->
@@ -164,46 +173,73 @@ fun ChatScreen(
                         input = ""
                         keyboard?.hide()
                     }
-                },
-                modelPicker = {
-                    ModelPickerChip(selected = selectedModel) { vm.selectModel(it.id) }
                 }
             )
         }
     }
+
+    if (pickerOpen) {
+        com.musornibak.korvus.ui.components.ModelPickerSheetExposed(
+            currentId = selectedModel.id,
+            onDismiss = { pickerOpen = false },
+            onPick = {
+                vm.selectModel(it.id)
+                pickerOpen = false
+            }
+        )
+    }
 }
 
 @Composable
-private fun TopBar(empty: Boolean, onMenu: () -> Unit, onClear: () -> Unit) {
-    val logoSize by animateDpAsState(
-        targetValue = if (empty) 0.dp else 30.dp,
-        animationSpec = tween(320),
-        label = "logo-size"
-    )
+private fun TopBar(
+    model: ModelInfo,
+    showClear: Boolean,
+    onMenu: () -> Unit,
+    onPicker: () -> Unit,
+    onClear: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .heightIn(min = 60.dp)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenu, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Default.Menu, contentDescription = "Чаты", tint = KorvusInkSoft)
         }
-        if (logoSize > 0.dp) {
-            LogoMark(size = logoSize, animated = false)
+        Spacer(Modifier.weight(1f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .heightIn(min = 44.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(KorvusOrangeBg)
+                .clickable { onPicker() }
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            ProviderIcon(model = model, size = 26.dp)
             Spacer(Modifier.width(8.dp))
             Text(
-                "Корвус",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
+                model.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.width(2.dp))
+            Icon(
+                Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = KorvusInkSoft
             )
         }
         Spacer(Modifier.weight(1f))
-        if (!empty) {
+        if (showClear) {
             IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Default.DeleteOutline, contentDescription = "Очистить чат", tint = KorvusInkSoft)
             }
+        } else {
+            Spacer(Modifier.size(48.dp))
         }
     }
 }
@@ -217,8 +253,8 @@ private fun EmptyHero(userName: String, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        LogoMark(size = 160.dp, animated = true)
-        Spacer(Modifier.height(28.dp))
+        LogoMark(size = 180.dp, animated = true)
+        Spacer(Modifier.height(32.dp))
         Text(
             "Привет, $userName.",
             style = MaterialTheme.typography.headlineLarge,
@@ -247,11 +283,7 @@ private fun StatusLine(text: String) {
             modifier = Modifier.size(16.dp)
         )
         Spacer(Modifier.width(12.dp))
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = KorvusInkFaint
-        )
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = KorvusInkFaint)
     }
 }
 
@@ -260,59 +292,58 @@ private fun InputBar(
     value: String,
     onChange: (String) -> Unit,
     enabled: Boolean,
-    onSend: () -> Unit,
-    modelPicker: @Composable () -> Unit
+    onSend: () -> Unit
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 16.dp))
+            .padding(PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 12.dp))
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(PaddingValues(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(PaddingValues(start = 12.dp, end = 8.dp, top = 10.dp, bottom = 8.dp))
-        ) {
-            Column {
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = onChange,
-                    placeholder = { Text("Спроси Корвуса…", style = MaterialTheme.typography.bodyLarge) },
-                    enabled = enabled,
-                    minLines = 1,
-                    maxLines = 6,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    shape = RoundedCornerShape(20.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+        Row(verticalAlignment = Alignment.Bottom) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onChange,
+                placeholder = { Text("Спроси Корвуса…", style = MaterialTheme.typography.bodyLarge) },
+                enabled = enabled,
+                minLines = 1,
+                maxLines = 6,
+                textStyle = MaterialTheme.typography.bodyLarge,
+                shape = RoundedCornerShape(22.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                modifier = Modifier.weight(1f),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
-                ) {
-                    modelPicker()
-                    Spacer(Modifier.weight(1f))
-                    IconButton(
-                        onClick = onSend,
-                        enabled = enabled && value.isNotBlank(),
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Отправить",
-                            tint = if (enabled && value.isNotBlank()) MaterialTheme.colorScheme.primary else KorvusInkFaint
+            )
+            IconButton(
+                onClick = onSend,
+                enabled = enabled && value.isNotBlank(),
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(end = 4.dp, bottom = 4.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(
+                            if (enabled && value.isNotBlank()) MaterialTheme.colorScheme.primary
+                            else KorvusOrangeBg
                         )
-                    }
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Отправить",
+                        tint = if (enabled && value.isNotBlank()) MaterialTheme.colorScheme.onPrimary else KorvusInkFaint
+                    )
                 }
             }
         }

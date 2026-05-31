@@ -28,9 +28,7 @@ private fun markFor(id: String): ProviderMark = when (id) {
     "cp-claude-sonnet-4-6" -> ProviderMark(Color(0xFFE0883D), Color.White, "C")
     "cp-gpt-5-2"           -> ProviderMark(Color(0xFF12A37F), Color.White, "G")
     "cp-gemini-3-pro"      -> ProviderMark(Color(0xFF3A6FF5), Color.White, "G")
-    "claude-opus-4-8"      -> ProviderMark(Color(0xFFCB6A2E), Color.White, "C")
-    "gpt-5-2"              -> ProviderMark(Color(0xFF12A37F), Color.White, "G")
-    "o5-reasoning"         -> ProviderMark(Color(0xFF4A4641), Color.White, "o")
+    "poll-openai-fast"     -> ProviderMark(Color(0xFF12A37F), Color.White, "P")
     else                   -> ProviderMark(Color(0xFF8B847B), Color.White, "?")
 }
 
