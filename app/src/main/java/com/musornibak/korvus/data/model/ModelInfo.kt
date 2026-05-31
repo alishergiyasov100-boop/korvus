@@ -1,6 +1,6 @@
 package com.musornibak.korvus.data.model
 
-enum class Provider { HF, POLLINATIONS }
+enum class Provider { HF, POLLINATIONS, COMPLETIONS }
 
 data class ModelInfo(
     val id: String,
@@ -44,6 +44,38 @@ object ModelRegistry {
             providerModelId = "moonshotai/Kimi-K2-Instruct",
             emoji = "\u26A1",
             tagline = "Быстрый"
+        ),
+        ModelInfo(
+            id = "cp-claude-opus-4-6",
+            displayName = "Claude Opus 4.6",
+            provider = Provider.COMPLETIONS,
+            providerModelId = "claude-opus-4-6",
+            emoji = "\uD83D\uDC51",
+            tagline = "Frontier · free"
+        ),
+        ModelInfo(
+            id = "cp-claude-sonnet-4-6",
+            displayName = "Claude Sonnet 4.6",
+            provider = Provider.COMPLETIONS,
+            providerModelId = "claude-sonnet-4-6",
+            emoji = "\uD83D\uDC51",
+            tagline = "Быстрый Sonnet · free"
+        ),
+        ModelInfo(
+            id = "cp-gpt-5-2",
+            displayName = "GPT-5.2",
+            provider = Provider.COMPLETIONS,
+            providerModelId = "gpt-5.2",
+            emoji = "\uD83D\uDE80",
+            tagline = "OpenAI · free"
+        ),
+        ModelInfo(
+            id = "cp-gemini-3-pro",
+            displayName = "Gemini 3.1 Pro",
+            provider = Provider.COMPLETIONS,
+            providerModelId = "gemini-3.1-pro",
+            emoji = "\u2728",
+            tagline = "Google · free"
         ),
         ModelInfo(
             id = "claude-opus-4-8",

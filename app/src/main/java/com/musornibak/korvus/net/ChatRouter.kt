@@ -7,11 +7,13 @@ import com.musornibak.korvus.data.model.Provider
 
 class ChatRouter(
     private val hfToken: String,
+    private val completionsToken: String,
     private val autoFailover: Boolean
 ) {
 
     private val hf = HfClient(hfToken)
     private val poll = PollinationsClient()
+    private val cp = CompletionsClient(completionsToken)
 
     suspend fun ask(
         model: ModelInfo,
@@ -25,6 +27,7 @@ class ChatRouter(
                 val text = when (attempt.provider) {
                     Provider.HF -> hf.chat(attempt.providerModelId, history, systemPrompt)
                     Provider.POLLINATIONS -> poll.chat(attempt.providerModelId, history, systemPrompt)
+                    Provider.COMPLETIONS -> cp.chat(attempt.providerModelId, history, systemPrompt)
                 }
                 return RouterResult(content = text, usedModel = attempt, fallbackFrom = if (attempt.id != model.id) model.id else null)
             } catch (t: Throwable) {
@@ -36,22 +39,28 @@ class ChatRouter(
 
     private fun failoverChain(primary: ModelInfo): List<ModelInfo> {
         val chain = mutableListOf(primary)
-        if (primary.provider == Provider.HF) {
-            // primary HF → other HF model of same category → pollinations fallback
-            val sameCat = ModelRegistry.ALL.firstOrNull {
-                it.provider == Provider.HF && it.id != primary.id
+        val cpFallback = ModelRegistry.ALL.firstOrNull { it.provider == Provider.COMPLETIONS && it.id != primary.id }
+        val pollFallback = ModelRegistry.ALL.firstOrNull { it.provider == Provider.POLLINATIONS && it.id != primary.id }
+        val hfFallback = ModelRegistry.ALL.firstOrNull { it.provider == Provider.HF && it.id != primary.id }
+            ?: ModelRegistry.byId(ModelRegistry.DEFAULT_ID)
+
+        when (primary.provider) {
+            Provider.HF -> {
+                ModelRegistry.ALL.firstOrNull { it.provider == Provider.HF && it.id != primary.id }?.let { chain.add(it) }
+                cpFallback?.let { chain.add(it) }
+                pollFallback?.let { chain.add(it) }
             }
-            if (sameCat != null) chain.add(sameCat)
-            val pollFallback = ModelRegistry.ALL.firstOrNull { it.provider == Provider.POLLINATIONS }
-            if (pollFallback != null) chain.add(pollFallback)
-        } else {
-            // primary Pollinations → other Pollinations → HF Qwen3
-            val otherPoll = ModelRegistry.ALL.firstOrNull {
-                it.provider == Provider.POLLINATIONS && it.id != primary.id
+            Provider.COMPLETIONS -> {
+                cpFallback?.let { chain.add(it) }
+                if (chain.last().id == primary.id) Unit
+                chain.add(hfFallback)
+                pollFallback?.let { chain.add(it) }
             }
-            if (otherPoll != null) chain.add(otherPoll)
-            val hfFallback = ModelRegistry.byId(ModelRegistry.DEFAULT_ID)
-            chain.add(hfFallback)
+            Provider.POLLINATIONS -> {
+                pollFallback?.let { chain.add(it) }
+                cpFallback?.let { chain.add(it) }
+                chain.add(hfFallback)
+            }
         }
         return chain.distinctBy { it.id }
     }

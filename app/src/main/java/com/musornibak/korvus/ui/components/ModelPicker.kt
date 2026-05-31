@@ -106,7 +106,7 @@ private fun ModelPickerSheet(
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                "HF — стабильно, твой ключ. Pollinations — без лимитов, иногда падает.",
+                "HF — стабильно, твой ключ. Completions — free Opus/GPT/Gemini, но sketchy (не лей секреты). Pollinations — анонимно, иногда падает.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -114,6 +114,11 @@ private fun ModelPickerSheet(
 
             ProviderHeader("HuggingFace")
             ModelRegistry.ALL.filter { it.provider == Provider.HF }.forEach { m ->
+                ModelRow(m, m.id == currentId) { onPick(m) }
+            }
+            Spacer(Modifier.height(14.dp))
+            ProviderHeader("Completions.me (free)")
+            ModelRegistry.ALL.filter { it.provider == Provider.COMPLETIONS }.forEach { m ->
                 ModelRow(m, m.id == currentId) { onPick(m) }
             }
             Spacer(Modifier.height(14.dp))

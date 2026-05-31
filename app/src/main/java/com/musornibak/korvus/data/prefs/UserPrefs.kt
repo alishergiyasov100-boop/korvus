@@ -20,11 +20,13 @@ class UserPrefs(private val ctx: Context) {
 
     private val keyUserName = stringPreferencesKey("user_name")
     private val keyHfToken = stringPreferencesKey("hf_token")
+    private val keyCompletionsToken = stringPreferencesKey("completions_token")
     private val keySelectedModel = stringPreferencesKey("selected_model")
     private val keyAutoFailover = stringPreferencesKey("auto_failover")
 
     val userName: Flow<String?> = ctx.dataStore.data.map { it[keyUserName] ?: "" }
     val hfToken: Flow<String> = ctx.dataStore.data.map { it[keyHfToken] ?: "" }
+    val completionsToken: Flow<String> = ctx.dataStore.data.map { it[keyCompletionsToken] ?: "" }
     val selectedModelId: Flow<String> = ctx.dataStore.data.map { it[keySelectedModel] ?: ModelRegistry.DEFAULT_ID }
     val autoFailover: Flow<Boolean> = ctx.dataStore.data.map { (it[keyAutoFailover] ?: "1") == "1" }
 
@@ -34,6 +36,10 @@ class UserPrefs(private val ctx: Context) {
 
     fun setHfToken(token: String) {
         scope.launch { ctx.dataStore.edit { it[keyHfToken] = token.trim() } }
+    }
+
+    fun setCompletionsToken(token: String) {
+        scope.launch { ctx.dataStore.edit { it[keyCompletionsToken] = token.trim() } }
     }
 
     fun setSelectedModel(id: String) {

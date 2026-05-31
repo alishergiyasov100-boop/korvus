@@ -87,9 +87,14 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
                 val modelId = prefs.selectedModelId.first()
                 val token = prefs.hfToken.first()
+                val cpToken = prefs.completionsToken.first()
                 val failover = prefs.autoFailover.first()
                 val model = ModelRegistry.byId(modelId)
-                val router = ChatRouter(hfToken = token, autoFailover = failover)
+                val router = ChatRouter(
+                    hfToken = token,
+                    completionsToken = cpToken,
+                    autoFailover = failover
+                )
 
                 val systemPrompt = buildSystemPrompt(userName)
                 runAgenticLoop(router, model, systemPrompt)

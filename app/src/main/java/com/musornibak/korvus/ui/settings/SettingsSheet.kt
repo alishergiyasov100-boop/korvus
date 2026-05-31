@@ -48,11 +48,13 @@ fun SettingsSheet(onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
 
     var token by remember { mutableStateOf("") }
+    var cpToken by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var failover by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         token = prefs.hfToken.first()
+        cpToken = prefs.completionsToken.first()
         name = prefs.userName.first() ?: ""
         failover = prefs.autoFailover.first()
     }
@@ -105,6 +107,50 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                     onClick = {
                         val clip = clipboard.getText()?.text
                         if (!clip.isNullOrBlank()) token = clip.trim()
+                    },
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ContentPaste,
+                        contentDescription = "Вставить из буфера",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text(
+                "Completions.me ключ",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "sk-cp_… с completions.me. Free Opus 4.6, GPT-5.2, Gemini 3.1 Pro. Sketchy сервис — не лей секреты в чат.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = KorvusInkSoft
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = cpToken,
+                    onValueChange = { cpToken = it },
+                    placeholder = { Text("sk-cp_…") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(58.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+                Spacer(Modifier.width(8.dp))
+                IconButton(
+                    onClick = {
+                        val clip = clipboard.getText()?.text
+                        if (!clip.isNullOrBlank()) cpToken = clip.trim()
                     },
                     modifier = Modifier.size(52.dp)
                 ) {
@@ -180,6 +226,7 @@ fun SettingsSheet(onDismiss: () -> Unit) {
             Button(
                 onClick = {
                     prefs.setHfToken(token)
+                    prefs.setCompletionsToken(cpToken)
                     if (name.isNotBlank()) prefs.setUserName(name)
                     prefs.setAutoFailover(failover)
                     onDismiss()
