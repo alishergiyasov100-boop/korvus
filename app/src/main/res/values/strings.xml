@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Корвус</string>
-    <string name="widget_description">Корвус — быстрый чат</string>
-    <string name="widget_title">Корвус</string>
+    <string name="app_name">MiaMuy</string>
+    <string name="widget_description">MiaMuy — quick chat</string>
+    <string name="widget_title">MiaMuy</string>
     <string name="widget_hint">Спроси что-нибудь…</string>
 </resources>

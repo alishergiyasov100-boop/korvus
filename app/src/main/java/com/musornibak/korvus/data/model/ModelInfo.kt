@@ -8,7 +8,8 @@ data class ModelInfo(
     val provider: Provider,
     val providerModelId: String,
     val emoji: String,
-    val tagline: String
+    val tagline: String,
+    val logoUrl: String? = null
 )
 
 object ModelRegistry {
@@ -19,7 +20,8 @@ object ModelRegistry {
             provider = Provider.HF,
             providerModelId = "Qwen/Qwen3-Coder-480B-A35B-Instruct",
             emoji = "\uD83D\uDEE0",
-            tagline = "Код, агент"
+            tagline = "Код, агент",
+            logoUrl = "https://cdn.simpleicons.org/qwen/D97757"
         ),
         ModelInfo(
             id = "deepseek-v3-2",
@@ -27,7 +29,8 @@ object ModelRegistry {
             provider = Provider.HF,
             providerModelId = "deepseek-ai/DeepSeek-V3.2-Exp",
             emoji = "\uD83E\uDDE0",
-            tagline = "Рассуждение"
+            tagline = "Рассуждение",
+            logoUrl = "https://cdn.simpleicons.org/deepseek/4D6BFE"
         ),
         ModelInfo(
             id = "llama-4-maverick",
@@ -35,7 +38,8 @@ object ModelRegistry {
             provider = Provider.HF,
             providerModelId = "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
             emoji = "\uD83D\uDC41",
-            tagline = "Vision"
+            tagline = "Vision",
+            logoUrl = "https://cdn.simpleicons.org/meta/0467DF"
         ),
         ModelInfo(
             id = "kimi-k2",
@@ -43,7 +47,8 @@ object ModelRegistry {
             provider = Provider.HF,
             providerModelId = "moonshotai/Kimi-K2-Instruct",
             emoji = "\u26A1",
-            tagline = "Быстрый"
+            tagline = "Быстрый",
+            logoUrl = "https://cdn.simpleicons.org/moonshot/000000"
         ),
         ModelInfo(
             id = "cp-claude-opus-4-6",
@@ -51,7 +56,8 @@ object ModelRegistry {
             provider = Provider.COMPLETIONS,
             providerModelId = "claude-opus-4-6",
             emoji = "\uD83D\uDC51",
-            tagline = "Frontier · free"
+            tagline = "Frontier · free",
+            logoUrl = "https://cdn.simpleicons.org/anthropic/D97757"
         ),
         ModelInfo(
             id = "cp-claude-sonnet-4-6",
@@ -59,7 +65,8 @@ object ModelRegistry {
             provider = Provider.COMPLETIONS,
             providerModelId = "claude-sonnet-4-6",
             emoji = "\uD83D\uDC51",
-            tagline = "Быстрый Sonnet · free"
+            tagline = "Быстрый Sonnet · free",
+            logoUrl = "https://cdn.simpleicons.org/anthropic/E89B7F"
         ),
         ModelInfo(
             id = "cp-gpt-5-2",
@@ -67,7 +74,8 @@ object ModelRegistry {
             provider = Provider.COMPLETIONS,
             providerModelId = "gpt-5.2",
             emoji = "\uD83D\uDE80",
-            tagline = "OpenAI · free"
+            tagline = "OpenAI · free",
+            logoUrl = "https://cdn.simpleicons.org/openai/EDE5DC"
         ),
         ModelInfo(
             id = "cp-gemini-3-pro",
@@ -75,7 +83,8 @@ object ModelRegistry {
             provider = Provider.COMPLETIONS,
             providerModelId = "gemini-3.1-pro",
             emoji = "\u2728",
-            tagline = "Google · free"
+            tagline = "Google · free",
+            logoUrl = "https://cdn.simpleicons.org/googlegemini/4285F4"
         ),
         ModelInfo(
             id = "poll-openai-fast",
@@ -83,11 +92,12 @@ object ModelRegistry {
             provider = Provider.POLLINATIONS,
             providerModelId = "openai-fast",
             emoji = "\u26A1",
-            tagline = "Анонимный фолбэк"
+            tagline = "Анонимный фолбэк",
+            logoUrl = "https://cdn.simpleicons.org/openai/B8AEA1"
         )
     )
 
-    val DEFAULT_ID = "qwen3-coder-480b"
+    val DEFAULT_ID = "cp-claude-opus-4-6"
 
     fun byId(id: String): ModelInfo = ALL.firstOrNull { it.id == id } ?: ALL.first { it.id == DEFAULT_ID }
 }

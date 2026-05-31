@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -30,13 +31,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.musornibak.korvus.data.store.ThreadInfo
-import com.musornibak.korvus.ui.components.LogoMark
 import com.musornibak.korvus.ui.theme.KorvusInkFaint
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
-import com.musornibak.korvus.ui.theme.KorvusOrangeBg
+import com.musornibak.korvus.ui.theme.KorvusOrange
+import com.musornibak.korvus.ui.theme.KorvusSurfaceHi
 
 @Composable
 fun ChatDrawerContent(
@@ -50,63 +54,43 @@ fun ChatDrawerContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(304.dp)
+            .width(300.dp)
             .background(MaterialTheme.colorScheme.background)
             .padding(PaddingValues(top = 36.dp, bottom = 12.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 18.dp)
+            modifier = Modifier.padding(horizontal = 22.dp)
         ) {
-            LogoMark(size = 32.dp, animated = false)
-            Spacer(Modifier.width(10.dp))
             Text(
-                "Корвус",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
+                "\u2731",
+                style = TextStyle(
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 22.sp,
+                    color = KorvusOrange
+                )
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "MiaMuy",
+                style = MaterialTheme.typography.displayMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
-        Spacer(Modifier.height(20.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(horizontal = 14.dp)
-                .fillMaxWidth()
-                .height(54.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable { onNewChat() }
-                .padding(horizontal = 16.dp)
-        ) {
-            Icon(
-                Icons.Default.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "Новый чат",
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(22.dp))
 
         Text(
-            "ЧАТЫ",
+            "Recents",
             style = MaterialTheme.typography.labelMedium,
             color = KorvusInkFaint,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 6.dp)
         )
 
         if (threads.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp)
+                    .padding(horizontal = 22.dp, vertical = 24.dp)
             ) {
                 Text(
                     "Пока пусто. Начни первый чат.",
@@ -119,7 +103,7 @@ fun ChatDrawerContent(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 items(threads, key = { it.id }) { t ->
@@ -135,25 +119,46 @@ fun ChatDrawerContent(
 
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .clickable { onSettings() }
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Icon(
-                Icons.Default.Settings,
-                contentDescription = null,
-                tint = KorvusInkSoft
-            )
-            Spacer(Modifier.width(14.dp))
-            Text(
-                "Настройки",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(KorvusSurfaceHi)
+                    .clickable { onSettings() }
+            ) {
+                Icon(Icons.Default.Settings, contentDescription = "Настройки", tint = MaterialTheme.colorScheme.onBackground)
+            }
+            Spacer(Modifier.weight(1f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.onBackground)
+                    .clickable { onNewChat() }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "New chat",
+                    color = MaterialTheme.colorScheme.background,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -170,7 +175,7 @@ private fun ThreadRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (active) KorvusOrangeBg else MaterialTheme.colorScheme.background)
+            .background(if (active) KorvusSurfaceHi else MaterialTheme.colorScheme.background)
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
@@ -191,7 +196,7 @@ private fun ThreadRow(
                 )
             }
         }
-        IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Default.DeleteOutline,
                 contentDescription = "Удалить",

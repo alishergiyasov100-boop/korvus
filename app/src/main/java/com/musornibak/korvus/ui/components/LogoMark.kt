@@ -28,7 +28,7 @@ fun LogoMark(
     if (!animated) {
         Image(
             painter = painterResource(R.mipmap.ic_launcher_foreground),
-            contentDescription = "Корвус",
+            contentDescription = "MiaMuy",
             modifier = Modifier.size(size)
         )
         return
@@ -55,7 +55,7 @@ fun LogoMark(
     Box(contentAlignment = Alignment.Center) {
         Image(
             painter = painterResource(R.mipmap.ic_launcher_foreground),
-            contentDescription = "Корвус",
+            contentDescription = "MiaMuy",
             modifier = Modifier
                 .size(size)
                 .scale(scale)

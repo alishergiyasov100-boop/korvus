@@ -13,8 +13,8 @@ android {
         applicationId = "com.musornibak.korvus"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     buildTypes {
@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
     implementation(libs.nanohttpd)
 
     debugImplementation(libs.androidx.ui.tooling)

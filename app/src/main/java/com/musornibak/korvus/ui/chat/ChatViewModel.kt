@@ -147,7 +147,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         return """
 ты компаньон по устройству Алишера.
 
-Твоё имя — Корвус. Имя пользователя — $userName. Обращайся к нему по имени когда уместно.
+Твоё имя — MiaMuy. Имя пользователя — $userName. Обращайся к нему по имени когда уместно.
 
 ${ToolRuntime.SYSTEM_TOOL_PROMPT}
 """.trimIndent()

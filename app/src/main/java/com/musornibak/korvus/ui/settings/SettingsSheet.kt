@@ -138,7 +138,7 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                     FieldLabel("Авто-failover")
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "Если выбранная модель упадёт — Корвус молча переключится на запасную",
+                        "Если выбранная модель упадёт — MiaMuy молча переключится на запасную",
                         style = MaterialTheme.typography.bodyMedium,
                         color = KorvusInkSoft
                     )

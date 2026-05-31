@@ -2,7 +2,6 @@ package com.musornibak.korvus.ui.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -24,10 +23,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.musornibak.korvus.ui.components.LogoMark
+import androidx.compose.ui.unit.sp
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
+import com.musornibak.korvus.ui.theme.KorvusOrange
 
 @Composable
 fun OnboardingScreen(onDone: (String) -> Unit) {
@@ -40,16 +42,23 @@ fun OnboardingScreen(onDone: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        LogoMark(size = 160.dp, animated = true)
-        Spacer(Modifier.height(24.dp))
         Text(
-            "Привет.",
-            style = MaterialTheme.typography.headlineLarge,
+            "\u2731",
+            style = TextStyle(
+                fontFamily = FontFamily.Serif,
+                fontSize = 56.sp,
+                color = KorvusOrange
+            )
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "MiaMuy",
+            style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
-            "Я — Корвус, твой компаньон по устройству.",
+            "Твой компаньон по устройству.",
             style = MaterialTheme.typography.bodyLarge,
             color = KorvusInkSoft
         )

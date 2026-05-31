@@ -38,7 +38,7 @@ import com.musornibak.korvus.data.model.ModelInfo
 import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.data.model.Provider
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
-import com.musornibak.korvus.ui.theme.KorvusOrangeBg
+import com.musornibak.korvus.ui.theme.KorvusSurfaceHi
 
 @Composable
 fun ModelPickerChip(
@@ -50,7 +50,7 @@ fun ModelPickerChip(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .heightIn(min = 44.dp)
-            .background(KorvusOrangeBg, RoundedCornerShape(50))
+            .background(KorvusSurfaceHi, RoundedCornerShape(50))
             .clickable { open = true }
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
@@ -159,7 +159,7 @@ private fun ModelRow(model: ModelInfo, selected: Boolean, onClick: () -> Unit) {
             .heightIn(min = 64.dp)
             .padding(vertical = 4.dp)
             .background(
-                if (selected) KorvusOrangeBg else MaterialTheme.colorScheme.surface,
+                if (selected) KorvusSurfaceHi else MaterialTheme.colorScheme.surface,
                 RoundedCornerShape(16.dp)
             )
             .border(1.5.dp, border, RoundedCornerShape(16.dp))
