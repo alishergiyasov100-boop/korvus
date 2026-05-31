@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="korvus_orange">#FF6B0F</color>
+    <color name="korvus_orange_soft">#FFB070</color>
+    <color name="korvus_cream">#FAF7F2</color>
+    <color name="korvus_cream_card">#FFFFFF</color>
+    <color name="korvus_ink">#1A1816</color>
+    <color name="korvus_ink_soft">#4A4641</color>
+    <color name="korvus_divider">#EAE5DE</color>
+</resources>
