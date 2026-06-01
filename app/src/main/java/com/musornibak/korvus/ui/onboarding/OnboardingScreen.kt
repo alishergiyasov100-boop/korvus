@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
@@ -43,15 +42,6 @@ fun OnboardingScreen(onDone: (String) -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "\u2731",
-            style = TextStyle(
-                fontFamily = FontFamily.Serif,
-                fontSize = 56.sp,
-                color = KorvusOrange
-            )
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
             "MiaMuy",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground
@@ -66,7 +56,6 @@ fun OnboardingScreen(onDone: (String) -> Unit) {
         Text(
             "Как мне тебя звать?",
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.fillMaxWidth()
         )
@@ -98,7 +87,7 @@ fun OnboardingScreen(onDone: (String) -> Unit) {
                 .fillMaxWidth()
                 .height(54.dp)
         ) {
-            Text("Поехали", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Text("Поехали", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

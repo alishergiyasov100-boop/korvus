@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.musornibak.korvus.data.store.ThreadInfo
@@ -58,25 +57,12 @@ fun ChatDrawerContent(
             .background(MaterialTheme.colorScheme.background)
             .padding(PaddingValues(top = 36.dp, bottom = 12.dp))
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Text(
+            "MiaMuy",
+            style = MaterialTheme.typography.displayMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 22.dp)
-        ) {
-            Text(
-                "\u2731",
-                style = TextStyle(
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 22.sp,
-                    color = KorvusOrange
-                )
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "MiaMuy",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
+        )
         Spacer(Modifier.height(22.dp))
 
         Text(
@@ -155,8 +141,7 @@ fun ChatDrawerContent(
                 Text(
                     "New chat",
                     color = MaterialTheme.colorScheme.background,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -183,7 +168,6 @@ private fun ThreadRow(
             Text(
                 info.title.ifBlank { "Новый чат" },
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1
             )

@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,23 +56,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.musornibak.korvus.data.model.ModelInfo
 import com.musornibak.korvus.data.model.ModelRegistry
+import com.musornibak.korvus.tools.AgenticTasks
 import com.musornibak.korvus.ui.components.MessageBubble
 import com.musornibak.korvus.ui.components.ProviderIcon
 import com.musornibak.korvus.ui.components.StreamingAssistant
+import com.musornibak.korvus.ui.components.TaskPanel
 import com.musornibak.korvus.ui.components.ThinkingIndicator
 import com.musornibak.korvus.ui.drawer.ChatDrawerContent
 import com.musornibak.korvus.ui.settings.SettingsSheet
 import com.musornibak.korvus.ui.theme.KorvusInkFaint
 import com.musornibak.korvus.ui.theme.KorvusInkSoft
-import com.musornibak.korvus.ui.theme.KorvusOrange
 import com.musornibak.korvus.ui.theme.KorvusSurface
 import com.musornibak.korvus.ui.theme.KorvusSurfaceHi
 import kotlinx.coroutines.launch
@@ -88,6 +90,8 @@ fun ChatScreen(
     val selectedId by vm.selectedModelId.collectAsStateWithLifecycle()
     val threads by vm.threads.collectAsStateWithLifecycle()
     val activeThreadId by vm.activeThreadId.collectAsStateWithLifecycle()
+    val available by vm.availableModels.collectAsStateWithLifecycle()
+    val tasks by AgenticTasks.tasks.collectAsStateWithLifecycle()
     val selectedModel = ModelRegistry.byId(selectedId)
 
     var input by remember { mutableStateOf("") }
@@ -172,12 +176,15 @@ fun ChatScreen(
                 }
             }
 
+            TaskPanel(tasks)
+
             InputBar(
                 value = input,
                 onChange = { input = it },
                 sending = isSending,
-                modelName = selectedModel.displayName,
-                modelLogoUrl = selectedModel.logoUrl,
+                selected = selectedModel,
+                models = available,
+                onModelChange = { vm.selectModel(it) },
                 onSend = {
                     if (input.isNotBlank()) {
                         vm.send(input, userName)
@@ -187,7 +194,7 @@ fun ChatScreen(
                 }
             )
             Text(
-                "MiaMuy · DeepSeek V4 Flash · local proxy",
+                "MiaMuy · ${selectedModel.displayName} · ${selectedModel.tagline}",
                 style = MaterialTheme.typography.labelMedium,
                 color = KorvusInkFaint,
                 modifier = Modifier
@@ -238,15 +245,6 @@ private fun EmptyHero(userName: String, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "\u2731",
-            style = TextStyle(
-                fontFamily = FontFamily.Serif,
-                fontSize = 44.sp,
-                color = KorvusOrange
-            )
-        )
-        Spacer(Modifier.height(18.dp))
-        Text(
             "${greeting()}, $userName",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground
@@ -269,10 +267,12 @@ private fun InputBar(
     value: String,
     onChange: (String) -> Unit,
     sending: Boolean,
-    modelName: String,
-    modelLogoUrl: String?,
+    selected: ModelInfo,
+    models: List<ModelInfo>,
+    onModelChange: (String) -> Unit,
     onSend: () -> Unit
 ) {
+    var pickerOpen by remember { mutableStateOf(false) }
     val cursorColor = MaterialTheme.colorScheme.primary
     Column(
         modifier = Modifier
@@ -322,31 +322,47 @@ private fun InputBar(
                 Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
             Spacer(Modifier.width(8.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(KorvusSurfaceHi)
-                    .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp)
-            ) {
-                ProviderIcon(
-                    model = com.musornibak.korvus.data.model.ModelInfo(
-                        id = "deepseek-v4-flash",
-                        displayName = modelName,
-                        provider = com.musornibak.korvus.data.model.Provider.DEEPSEEK_PROXY,
-                        providerModelId = "",
-                        emoji = "",
-                        tagline = "",
-                        logoUrl = modelLogoUrl
-                    ),
-                    size = 24.dp
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    modelName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(KorvusSurfaceHi)
+                        .clickable { pickerOpen = true }
+                        .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp)
+                ) {
+                    ProviderIcon(model = selected, size = 24.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        selected.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                DropdownMenu(
+                    expanded = pickerOpen,
+                    onDismissRequest = { pickerOpen = false },
+                    modifier = Modifier.background(KorvusSurface)
+                ) {
+                    models.forEach { m ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    ProviderIcon(model = m, size = 22.dp)
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text(m.displayName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                                        Text(m.tagline, style = MaterialTheme.typography.labelMedium, color = KorvusInkFaint)
+                                    }
+                                }
+                            },
+                            onClick = {
+                                onModelChange(m.id)
+                                pickerOpen = false
+                            }
+                        )
+                    }
+                }
             }
             Spacer(Modifier.weight(1f))
             if (value.isBlank() && !sending) {

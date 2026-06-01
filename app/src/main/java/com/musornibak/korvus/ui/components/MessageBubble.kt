@@ -6,8 +6,10 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,9 +28,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.musornibak.korvus.data.model.Message
@@ -74,16 +77,6 @@ fun ThinkingIndicator() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
     ) {
-        Text(
-            "\u2731",
-            style = TextStyle(
-                fontFamily = FontFamily.Serif,
-                fontSize = 18.sp,
-                color = KorvusOrange
-            ),
-            modifier = Modifier.padding(top = 2.dp)
-        )
-        Spacer(Modifier.width(10.dp))
         AnimatedDots()
     }
 }
@@ -130,8 +123,10 @@ private fun BlinkingCursor() {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UserBubble(content: String) {
+    val clipboard = LocalClipboardManager.current
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.End
@@ -141,6 +136,10 @@ private fun UserBubble(content: String) {
                 .widthIn(max = 320.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(KorvusUserBubble)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { clipboard.setText(AnnotatedString(content)) }
+                )
                 .padding(PaddingValues(horizontal = 14.dp, vertical = 10.dp))
         ) {
             Text(
@@ -180,23 +179,27 @@ private fun splitSegments(content: String): List<Segment> {
     return out
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AssistantSegments(content: String, streaming: Boolean) {
     val segments = splitSegments(content)
+    val clipboard = LocalClipboardManager.current
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
     ) {
-        Text(
-            "\u2731",
-            style = TextStyle(
-                fontFamily = FontFamily.Serif,
-                fontSize = 18.sp,
-                color = KorvusOrange
-            ),
-            modifier = Modifier.padding(top = 2.dp)
-        )
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = {
+                        val plain = segments.filterIsInstance<Segment.PlainText>()
+                            .joinToString("\n") { it.text }
+                            .trim()
+                        if (plain.isNotEmpty()) clipboard.setText(AnnotatedString(plain))
+                    }
+                )
+        ) {
             segments.forEachIndexed { i, seg ->
                 when (seg) {
                     is Segment.PlainText -> {
@@ -244,7 +247,6 @@ private fun ToolCallFrame(name: String, args: String) {
                 style = TextStyle(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             )
