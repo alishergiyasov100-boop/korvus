@@ -30,7 +30,7 @@ class OpenAIClient(
         providerModelId: String,
         messages: List<Message>,
         systemPrompt: String,
-        maxTokens: Int = 4096,
+        maxTokens: Int? = null,
         temperature: Double = 0.6,
         onDelta: suspend (String) -> Unit
     ): String = withContext(Dispatchers.IO) {
@@ -58,7 +58,7 @@ class OpenAIClient(
         val body: JsonObject = buildJsonObject {
             put("model", providerModelId)
             put("messages", msgArray)
-            put("max_tokens", maxTokens)
+            if (maxTokens != null) put("max_tokens", maxTokens)
             put("temperature", temperature)
             put("stream", true)
         }

@@ -13,8 +13,8 @@ android {
         applicationId = "com.musornibak.korvus"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "0.8.0"
+        versionCode = 10
+        versionName = "0.8.1"
     }
 
     buildTypes {
