@@ -187,7 +187,7 @@ fun ChatScreen(
                 }
             )
             Text(
-                "MiaMuy · DeepSeek V4 Pro · local proxy",
+                "MiaMuy · DeepSeek V4 Flash · local proxy",
                 style = MaterialTheme.typography.labelMedium,
                 color = KorvusInkFaint,
                 modifier = Modifier
@@ -331,7 +331,7 @@ private fun InputBar(
             ) {
                 ProviderIcon(
                     model = com.musornibak.korvus.data.model.ModelInfo(
-                        id = "deepseek-v4-pro",
+                        id = "deepseek-v4-flash",
                         displayName = modelName,
                         provider = com.musornibak.korvus.data.model.Provider.DEEPSEEK_PROXY,
                         providerModelId = "",
