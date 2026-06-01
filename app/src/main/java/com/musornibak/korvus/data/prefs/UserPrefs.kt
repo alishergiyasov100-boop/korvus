@@ -19,28 +19,20 @@ class UserPrefs(private val ctx: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val keyUserName = stringPreferencesKey("user_name")
-    private val keyHfToken = stringPreferencesKey("hf_token")
-    private val keyCompletionsToken = stringPreferencesKey("completions_token")
+    private val keySiliconflowToken = stringPreferencesKey("siliconflow_token")
     private val keySelectedModel = stringPreferencesKey("selected_model")
-    private val keyAutoFailover = stringPreferencesKey("auto_failover")
 
     val userName: Flow<String?> = ctx.dataStore.data.map { it[keyUserName] ?: "" }
-    val hfToken: Flow<String> = ctx.dataStore.data.map { it[keyHfToken] ?: "" }
-    val completionsToken: Flow<String> = ctx.dataStore.data.map { it[keyCompletionsToken] ?: "" }
+    val siliconflowToken: Flow<String> = ctx.dataStore.data.map { it[keySiliconflowToken] ?: "" }
     val selectedModelId: Flow<String> = ctx.dataStore.data.map { it[keySelectedModel] ?: ModelRegistry.DEFAULT_ID }
-    val autoFailover: Flow<Boolean> = ctx.dataStore.data.map { (it[keyAutoFailover] ?: "1") == "1" }
 
     suspend fun saveAll(
         userName: String?,
-        hfToken: String?,
-        completionsToken: String?,
-        autoFailover: Boolean?
+        siliconflowToken: String?
     ) {
         ctx.dataStore.edit { p ->
             userName?.trim()?.takeIf { it.isNotBlank() }?.let { p[keyUserName] = it }
-            hfToken?.let { p[keyHfToken] = it.trim() }
-            completionsToken?.let { p[keyCompletionsToken] = it.trim() }
-            autoFailover?.let { p[keyAutoFailover] = if (it) "1" else "0" }
+            siliconflowToken?.let { p[keySiliconflowToken] = it.trim() }
         }
     }
 

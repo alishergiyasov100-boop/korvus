@@ -9,7 +9,7 @@ import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.data.prefs.UserPrefs
 import com.musornibak.korvus.data.store.ThreadInfo
 import com.musornibak.korvus.data.store.ThreadStore
-import com.musornibak.korvus.net.ChatRouter
+import com.musornibak.korvus.net.SiliconFlowClient
 import com.musornibak.korvus.tools.ToolRuntime
 import com.musornibak.korvus.widget.KorvusWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +32,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _statusLine = MutableStateFlow<String?>(null)
     val statusLine: StateFlow<String?> = _statusLine.asStateFlow()
+
+    private val _streamingContent = MutableStateFlow<String?>(null)
+    val streamingContent: StateFlow<String?> = _streamingContent.asStateFlow()
 
     val selectedModelId: StateFlow<String> = run {
         val f = MutableStateFlow(ModelRegistry.DEFAULT_ID)
@@ -86,60 +89,60 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 refreshWidget()
 
                 val modelId = prefs.selectedModelId.first()
-                val token = prefs.hfToken.first()
-                val cpToken = prefs.completionsToken.first()
-                val failover = prefs.autoFailover.first()
+                val token = prefs.siliconflowToken.first()
                 val model = ModelRegistry.byId(modelId)
-                val router = ChatRouter(
-                    hfToken = token,
-                    completionsToken = cpToken,
-                    autoFailover = failover
-                )
-
+                val client = SiliconFlowClient(token)
                 val systemPrompt = buildSystemPrompt(userName)
-                runAgenticLoop(router, model, systemPrompt)
+                runAgenticLoop(client, model, systemPrompt)
             } catch (t: Throwable) {
+                _streamingContent.value = null
                 store.appendActive(Message(role = "assistant", content = "⚠️ Ошибка: ${t.message ?: t::class.simpleName}"))
                 refreshWidget()
             } finally {
                 _isSending.value = false
                 _statusLine.value = null
+                _streamingContent.value = null
             }
         }
     }
 
     private suspend fun runAgenticLoop(
-        router: ChatRouter,
-        initialModel: ModelInfo,
+        client: SiliconFlowClient,
+        model: ModelInfo,
         systemPrompt: String,
         maxIterations: Int = 6
     ) {
-        val model = initialModel
         repeat(maxIterations) { iteration ->
-            _statusLine.value = if (iteration == 0) "${model.displayName} думает…" else "Tool round ${iteration}…"
+            _statusLine.value = if (iteration == 0) "Thinking" else "Tool round ${iteration}"
+            _streamingContent.value = ""
             val history = messages.value
-            val result = router.ask(model, history, systemPrompt)
-            if (result.fallbackFrom != null) {
-                _statusLine.value = "⚠ ${result.fallbackFrom} → ${result.usedModel.displayName}"
+
+            val finalText = client.chatStream(
+                providerModelId = model.providerModelId,
+                messages = history,
+                systemPrompt = systemPrompt
+            ) { delta ->
+                _streamingContent.value = (_streamingContent.value ?: "") + delta
             }
-            val text = result.content
-            store.appendActive(Message(role = "assistant", content = text, modelId = result.usedModel.id))
+
+            _streamingContent.value = null
+            store.appendActive(Message(role = "assistant", content = finalText, modelId = model.id))
             refreshWidget()
 
-            val calls = ToolRuntime.parseToolCalls(text)
+            val calls = ToolRuntime.parseToolCalls(finalText)
             if (calls.isEmpty()) return
             val call = calls.first()
-            _statusLine.value = "🔧 ${call.name}…"
+            _statusLine.value = "Running ${call.name}"
             val outRaw = try {
                 ToolRuntime.execute(getApplication(), call)
             } catch (t: Throwable) {
                 "ERROR: ${t.message}"
             }
-            val outClipped = if (outRaw.length > 8000) outRaw.take(8000) + "\n…[обрезано до 8000 символов]" else outRaw
+            val outClipped = if (outRaw.length > 8000) outRaw.take(8000) + "\n…[обрезано до 8000]" else outRaw
             store.appendActive(Message(role = "user", content = "[tool result: ${call.name}]\n$outClipped"))
             refreshWidget()
         }
-        store.appendActive(Message(role = "assistant", content = "⚠ Цикл инструментов остановлен (лимит $maxIterations итераций)."))
+        store.appendActive(Message(role = "assistant", content = "⚠ Цикл инструментов остановлен (лимит $maxIterations)."))
         refreshWidget()
     }
 

@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -50,17 +49,13 @@ fun SettingsSheet(onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
-    var token by remember { mutableStateOf("") }
-    var cpToken by remember { mutableStateOf("") }
+    var sfToken by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var failover by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        token = prefs.hfToken.first()
-        cpToken = prefs.completionsToken.first()
+        sfToken = prefs.siliconflowToken.first()
         name = prefs.userName.first() ?: ""
-        failover = prefs.autoFailover.first()
     }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -76,43 +71,24 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 8.dp)
         ) {
-            Text("Настройки", style = MaterialTheme.typography.headlineMedium)
+            Text("Settings", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(20.dp))
 
-            FieldLabel("HuggingFace токен")
+            FieldLabel("SiliconFlow ключ")
             Spacer(Modifier.height(6.dp))
             Text(
-                "hf_… с правами Inference. Без него HF-модели вернут 401.",
+                "sk-… из siliconflow.cn dashboard. Серия Qwen — бесплатно навсегда.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft
             )
             Spacer(Modifier.height(10.dp))
             TokenField(
-                value = token,
-                onChange = { token = it },
-                placeholder = "hf_…",
+                value = sfToken,
+                onChange = { sfToken = it },
+                placeholder = "sk-…",
                 onPaste = {
                     val clip = clipboard.getText()?.text
-                    if (!clip.isNullOrBlank()) token = clip.trim()
-                }
-            )
-
-            Spacer(Modifier.height(24.dp))
-            FieldLabel("Completions.me ключ")
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "sk-cp_… Free Opus 4.6, GPT-5.2, Gemini 3.1 Pro. Sketchy сервис — не лей секреты в чат.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = KorvusInkSoft
-            )
-            Spacer(Modifier.height(10.dp))
-            TokenField(
-                value = cpToken,
-                onChange = { cpToken = it },
-                placeholder = "sk-cp_…",
-                onPaste = {
-                    val clip = clipboard.getText()?.text
-                    if (!clip.isNullOrBlank()) cpToken = clip.trim()
+                    if (!clip.isNullOrBlank()) sfToken = clip.trim()
                 }
             )
 
@@ -129,24 +105,6 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                 }
             )
 
-            Spacer(Modifier.height(24.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(Modifier.weight(1f)) {
-                    FieldLabel("Авто-failover")
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "Если выбранная модель упадёт — MiaMuy молча переключится на запасную",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = KorvusInkSoft
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Switch(checked = failover, onCheckedChange = { failover = it })
-            }
-
             Spacer(Modifier.height(28.dp))
             Button(
                 onClick = {
@@ -155,9 +113,7 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                     scope.launch {
                         prefs.saveAll(
                             userName = name.takeIf { it.isNotBlank() },
-                            hfToken = token,
-                            completionsToken = cpToken,
-                            autoFailover = failover
+                            siliconflowToken = sfToken
                         )
                         saving = false
                         onDismiss()

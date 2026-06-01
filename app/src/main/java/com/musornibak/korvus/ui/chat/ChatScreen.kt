@@ -29,12 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,16 +56,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.musornibak.korvus.data.model.ModelInfo
 import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.ui.components.MessageBubble
 import com.musornibak.korvus.ui.components.ProviderIcon
+import com.musornibak.korvus.ui.components.StreamingAssistant
+import com.musornibak.korvus.ui.components.ThinkingIndicator
 import com.musornibak.korvus.ui.drawer.ChatDrawerContent
 import com.musornibak.korvus.ui.settings.SettingsSheet
 import com.musornibak.korvus.ui.theme.KorvusInkFaint
@@ -86,7 +84,7 @@ fun ChatScreen(
 ) {
     val messages by vm.messages.collectAsStateWithLifecycle()
     val isSending by vm.isSending.collectAsStateWithLifecycle()
-    val status by vm.statusLine.collectAsStateWithLifecycle()
+    val streaming by vm.streamingContent.collectAsStateWithLifecycle()
     val selectedId by vm.selectedModelId.collectAsStateWithLifecycle()
     val threads by vm.threads.collectAsStateWithLifecycle()
     val activeThreadId by vm.activeThreadId.collectAsStateWithLifecycle()
@@ -94,7 +92,6 @@ fun ChatScreen(
 
     var input by remember { mutableStateOf("") }
     var settingsOpen by remember { mutableStateOf(false) }
-    var pickerOpen by remember { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
 
@@ -105,8 +102,10 @@ fun ChatScreen(
         SettingsSheet(onDismiss = { settingsOpen = false })
     }
 
-    LaunchedEffect(messages.size, activeThreadId) {
-        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
+    LaunchedEffect(messages.size, activeThreadId, streaming?.length) {
+        val extra = if (streaming != null) 1 else 0
+        val total = messages.size + extra
+        if (total > 0) listState.animateScrollToItem(total - 1)
     }
 
     ModalNavigationDrawer(
@@ -150,7 +149,7 @@ fun ChatScreen(
                 onClear = { vm.clearChat() }
             )
 
-            if (messages.isEmpty()) {
+            if (messages.isEmpty() && streaming == null) {
                 EmptyHero(userName = userName, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(
@@ -164,8 +163,11 @@ fun ChatScreen(
                     items(messages, key = { it.ts }) { msg ->
                         MessageBubble(msg)
                     }
-                    if (status != null) {
-                        item { StatusLine(text = status!!) }
+                    if (streaming != null) {
+                        item {
+                            if (streaming!!.isEmpty()) ThinkingIndicator()
+                            else StreamingAssistant(streaming!!)
+                        }
                     }
                 }
             }
@@ -174,8 +176,8 @@ fun ChatScreen(
                 value = input,
                 onChange = { input = it },
                 sending = isSending,
-                model = selectedModel,
-                onPickModel = { pickerOpen = true },
+                modelName = selectedModel.displayName,
+                modelLogoUrl = selectedModel.logoUrl,
                 onSend = {
                     if (input.isNotBlank()) {
                         vm.send(input, userName)
@@ -185,7 +187,7 @@ fun ChatScreen(
                 }
             )
             Text(
-                "MiaMuy is AI and can make mistakes.",
+                "MiaMuy · Qwen3-Coder via SiliconFlow",
                 style = MaterialTheme.typography.labelMedium,
                 color = KorvusInkFaint,
                 modifier = Modifier
@@ -194,17 +196,6 @@ fun ChatScreen(
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
-    }
-
-    if (pickerOpen) {
-        com.musornibak.korvus.ui.components.ModelPickerSheetExposed(
-            currentId = selectedModel.id,
-            onDismiss = { pickerOpen = false },
-            onPick = {
-                vm.selectModel(it.id)
-                pickerOpen = false
-            }
-        )
     }
 }
 
@@ -222,12 +213,12 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenu, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Outlined.Menu, contentDescription = "Меню", tint = MaterialTheme.colorScheme.onBackground)
+            Icon(Icons.Outlined.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onBackground)
         }
         Spacer(Modifier.weight(1f))
         if (showClear) {
             IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "Очистить", tint = KorvusInkSoft)
+                Icon(Icons.Default.DeleteOutline, contentDescription = "Clear", tint = KorvusInkSoft)
             }
         } else {
             IconButton(onClick = onMenu, modifier = Modifier.size(48.dp)) {
@@ -274,30 +265,12 @@ private fun greeting(): String {
 }
 
 @Composable
-private fun StatusLine(text: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CircularProgressIndicator(
-            strokeWidth = 2.dp,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = KorvusInkFaint)
-    }
-}
-
-@Composable
 private fun InputBar(
     value: String,
     onChange: (String) -> Unit,
     sending: Boolean,
-    model: ModelInfo,
-    onPickModel: () -> Unit,
+    modelName: String,
+    modelLogoUrl: String?,
     onSend: () -> Unit
 ) {
     val cursorColor = MaterialTheme.colorScheme.primary
@@ -354,22 +327,25 @@ private fun InputBar(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
                     .background(KorvusSurfaceHi)
-                    .clickable { onPickModel() }
-                    .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                    .padding(start = 4.dp, end = 10.dp, top = 4.dp, bottom = 4.dp)
             ) {
-                ProviderIcon(model = model, size = 26.dp)
+                ProviderIcon(
+                    model = com.musornibak.korvus.data.model.ModelInfo(
+                        id = "sf-qwen3-coder-480b",
+                        displayName = modelName,
+                        provider = com.musornibak.korvus.data.model.Provider.SILICONFLOW,
+                        providerModelId = "",
+                        emoji = "",
+                        tagline = "",
+                        logoUrl = modelLogoUrl
+                    ),
+                    size = 24.dp
+                )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    model.displayName,
+                    modelName,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
-                )
-                Icon(
-                    Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = KorvusInkSoft,
-                    modifier = Modifier.size(18.dp)
                 )
             }
             Spacer(Modifier.weight(1f))
@@ -379,17 +355,19 @@ private fun InputBar(
                 }
                 Spacer(Modifier.width(2.dp))
             }
+            val sendEnabled = !sending && value.isNotBlank()
+            val sendBg = when {
+                sending -> MaterialTheme.colorScheme.onBackground
+                sendEnabled -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onBackground
+            }
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (sending) MaterialTheme.colorScheme.onBackground
-                        else if (value.isNotBlank()) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onBackground
-                    )
-                    .clickable(enabled = !sending && value.isNotBlank()) { onSend() }
+                    .background(sendBg)
+                    .clickable(enabled = sendEnabled, onClick = onSend)
             ) {
                 when {
                     sending -> Icon(
