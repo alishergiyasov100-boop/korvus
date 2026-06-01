@@ -1,6 +1,6 @@
 package com.musornibak.korvus.data.model
 
-enum class Provider { SILICONFLOW }
+enum class Provider { DEEPSEEK_PROXY }
 
 data class ModelInfo(
     val id: String,
@@ -15,17 +15,17 @@ data class ModelInfo(
 object ModelRegistry {
     val ALL: List<ModelInfo> = listOf(
         ModelInfo(
-            id = "sf-qwen3-coder-480b",
-            displayName = "Qwen3-Coder 480B",
-            provider = Provider.SILICONFLOW,
-            providerModelId = "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-            emoji = "\uD83D\uDEE0",
-            tagline = "Free · SiliconFlow",
-            logoUrl = "https://cdn.simpleicons.org/qwen/D97757"
+            id = "deepseek-v4-pro",
+            displayName = "DeepSeek V4 Pro",
+            provider = Provider.DEEPSEEK_PROXY,
+            providerModelId = "deepseek-v4-pro",
+            emoji = "\uD83C\uDF0A",
+            tagline = "Free · local proxy",
+            logoUrl = "https://cdn.simpleicons.org/deepseek/4D6BFE"
         )
     )
 
-    val DEFAULT_ID = "sf-qwen3-coder-480b"
+    val DEFAULT_ID = "deepseek-v4-pro"
 
     fun byId(id: String): ModelInfo = ALL.firstOrNull { it.id == id } ?: ALL.first { it.id == DEFAULT_ID }
 }

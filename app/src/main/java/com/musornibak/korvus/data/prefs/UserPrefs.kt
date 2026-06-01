@@ -19,20 +19,24 @@ class UserPrefs(private val ctx: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val keyUserName = stringPreferencesKey("user_name")
-    private val keySiliconflowToken = stringPreferencesKey("siliconflow_token")
+    private val keyProxyApiKey = stringPreferencesKey("proxy_api_key")
+    private val keyProxyBaseUrl = stringPreferencesKey("proxy_base_url")
     private val keySelectedModel = stringPreferencesKey("selected_model")
 
     val userName: Flow<String?> = ctx.dataStore.data.map { it[keyUserName] ?: "" }
-    val siliconflowToken: Flow<String> = ctx.dataStore.data.map { it[keySiliconflowToken] ?: "" }
+    val proxyApiKey: Flow<String> = ctx.dataStore.data.map { it[keyProxyApiKey] ?: "" }
+    val proxyBaseUrl: Flow<String> = ctx.dataStore.data.map { it[keyProxyBaseUrl] ?: DEFAULT_BASE_URL }
     val selectedModelId: Flow<String> = ctx.dataStore.data.map { it[keySelectedModel] ?: ModelRegistry.DEFAULT_ID }
 
     suspend fun saveAll(
         userName: String?,
-        siliconflowToken: String?
+        proxyApiKey: String?,
+        proxyBaseUrl: String?
     ) {
         ctx.dataStore.edit { p ->
             userName?.trim()?.takeIf { it.isNotBlank() }?.let { p[keyUserName] = it }
-            siliconflowToken?.let { p[keySiliconflowToken] = it.trim() }
+            proxyApiKey?.let { p[keyProxyApiKey] = it.trim() }
+            proxyBaseUrl?.trim()?.takeIf { it.isNotBlank() }?.let { p[keyProxyBaseUrl] = it.trimEnd('/') }
         }
     }
 
@@ -42,5 +46,9 @@ class UserPrefs(private val ctx: Context) {
 
     fun setSelectedModel(id: String) {
         scope.launch { ctx.dataStore.edit { it[keySelectedModel] = id } }
+    }
+
+    companion object {
+        const val DEFAULT_BASE_URL = "http://127.0.0.1:22217/v1"
     }
 }

@@ -19,7 +19,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-class SiliconFlowClient(private val token: String) {
+class OpenAIClient(
+    private val baseUrl: String,
+    private val apiKey: String
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -31,7 +34,8 @@ class SiliconFlowClient(private val token: String) {
         temperature: Double = 0.6,
         onDelta: suspend (String) -> Unit
     ): String = withContext(Dispatchers.IO) {
-        if (token.isBlank()) throw RuntimeException("Нет SiliconFlow ключа (sk-…). Зайди в Настройки.")
+        if (apiKey.isBlank()) throw RuntimeException("Нет API ключа. Зайди в Настройки и создай ключ в админке ds-free-api.")
+        if (baseUrl.isBlank()) throw RuntimeException("Нет адреса бэкенда.")
 
         val msgArray: JsonArray = buildJsonArray {
             add(buildJsonObject {
@@ -60,9 +64,9 @@ class SiliconFlowClient(private val token: String) {
         }
 
         val req = Request.Builder()
-            .url("https://api.siliconflow.cn/v1/chat/completions")
+            .url("${baseUrl.trimEnd('/')}/chat/completions")
             .post(body.toString().toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer $token")
+            .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .addHeader("Accept", "text/event-stream")
             .build()
@@ -71,9 +75,9 @@ class SiliconFlowClient(private val token: String) {
         HttpClient.instance.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) {
                 val errBody = try { resp.body?.string()?.take(500) } catch (_: Throwable) { null }
-                throw RuntimeException("SiliconFlow ${resp.code}: ${errBody ?: "no body"}")
+                throw RuntimeException("Backend ${resp.code}: ${errBody ?: "no body"}")
             }
-            val source = resp.body?.byteStream() ?: throw RuntimeException("Пустой стрим SiliconFlow")
+            val source = resp.body?.byteStream() ?: throw RuntimeException("Пустой стрим")
             val reader = BufferedReader(InputStreamReader(source, Charsets.UTF_8))
             reader.useLines { lines ->
                 for (rawLine in lines) {

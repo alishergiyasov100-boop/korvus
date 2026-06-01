@@ -9,7 +9,7 @@ import com.musornibak.korvus.data.model.ModelRegistry
 import com.musornibak.korvus.data.prefs.UserPrefs
 import com.musornibak.korvus.data.store.ThreadInfo
 import com.musornibak.korvus.data.store.ThreadStore
-import com.musornibak.korvus.net.SiliconFlowClient
+import com.musornibak.korvus.net.OpenAIClient
 import com.musornibak.korvus.tools.ToolRuntime
 import com.musornibak.korvus.widget.KorvusWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,9 +89,10 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 refreshWidget()
 
                 val modelId = prefs.selectedModelId.first()
-                val token = prefs.siliconflowToken.first()
+                val token = prefs.proxyApiKey.first()
+                val baseUrl = prefs.proxyBaseUrl.first()
                 val model = ModelRegistry.byId(modelId)
-                val client = SiliconFlowClient(token)
+                val client = OpenAIClient(baseUrl, token)
                 val systemPrompt = buildSystemPrompt(userName)
                 runAgenticLoop(client, model, systemPrompt)
             } catch (t: Throwable) {
@@ -107,7 +108,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun runAgenticLoop(
-        client: SiliconFlowClient,
+        client: OpenAIClient,
         model: ModelInfo,
         systemPrompt: String,
         maxIterations: Int = 6

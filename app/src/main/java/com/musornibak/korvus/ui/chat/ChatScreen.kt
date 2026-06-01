@@ -187,7 +187,7 @@ fun ChatScreen(
                 }
             )
             Text(
-                "MiaMuy · Qwen3-Coder via SiliconFlow",
+                "MiaMuy · DeepSeek V4 Pro · local proxy",
                 style = MaterialTheme.typography.labelMedium,
                 color = KorvusInkFaint,
                 modifier = Modifier
@@ -331,9 +331,9 @@ private fun InputBar(
             ) {
                 ProviderIcon(
                     model = com.musornibak.korvus.data.model.ModelInfo(
-                        id = "sf-qwen3-coder-480b",
+                        id = "deepseek-v4-pro",
                         displayName = modelName,
-                        provider = com.musornibak.korvus.data.model.Provider.SILICONFLOW,
+                        provider = com.musornibak.korvus.data.model.Provider.DEEPSEEK_PROXY,
                         providerModelId = "",
                         emoji = "",
                         tagline = "",

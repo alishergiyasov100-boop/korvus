@@ -49,12 +49,14 @@ fun SettingsSheet(onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
-    var sfToken by remember { mutableStateOf("") }
+    var apiKey by remember { mutableStateOf("") }
+    var baseUrl by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        sfToken = prefs.siliconflowToken.first()
+        apiKey = prefs.proxyApiKey.first()
+        baseUrl = prefs.proxyBaseUrl.first()
         name = prefs.userName.first() ?: ""
     }
 
@@ -74,21 +76,40 @@ fun SettingsSheet(onDismiss: () -> Unit) {
             Text("Settings", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(20.dp))
 
-            FieldLabel("SiliconFlow ключ")
+            FieldLabel("Backend URL")
             Spacer(Modifier.height(6.dp))
             Text(
-                "sk-… из siliconflow.cn dashboard. Серия Qwen — бесплатно навсегда.",
+                "Адрес ds-free-api. По умолчанию локальный прокси в Termux.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KorvusInkSoft
             )
             Spacer(Modifier.height(10.dp))
             TokenField(
-                value = sfToken,
-                onChange = { sfToken = it },
+                value = baseUrl,
+                onChange = { baseUrl = it },
+                placeholder = UserPrefs.DEFAULT_BASE_URL,
+                onPaste = {
+                    val clip = clipboard.getText()?.text
+                    if (!clip.isNullOrBlank()) baseUrl = clip.trim()
+                }
+            )
+
+            Spacer(Modifier.height(24.dp))
+            FieldLabel("API ключ")
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "sk-… из админки ds-free-api (http://127.0.0.1:22217/admin).",
+                style = MaterialTheme.typography.bodyMedium,
+                color = KorvusInkSoft
+            )
+            Spacer(Modifier.height(10.dp))
+            TokenField(
+                value = apiKey,
+                onChange = { apiKey = it },
                 placeholder = "sk-…",
                 onPaste = {
                     val clip = clipboard.getText()?.text
-                    if (!clip.isNullOrBlank()) sfToken = clip.trim()
+                    if (!clip.isNullOrBlank()) apiKey = clip.trim()
                 }
             )
 
@@ -113,7 +134,8 @@ fun SettingsSheet(onDismiss: () -> Unit) {
                     scope.launch {
                         prefs.saveAll(
                             userName = name.takeIf { it.isNotBlank() },
-                            siliconflowToken = sfToken
+                            proxyApiKey = apiKey,
+                            proxyBaseUrl = baseUrl
                         )
                         saving = false
                         onDismiss()

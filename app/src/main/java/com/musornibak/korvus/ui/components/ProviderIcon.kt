@@ -28,6 +28,7 @@ import com.musornibak.korvus.data.model.ModelInfo
 private data class Mono(val bg: Color, val fg: Color, val letter: String)
 
 private fun monoFor(id: String): Mono = when (id) {
+    "deepseek-v4-pro"      -> Mono(Color(0xFF4D6BFE), Color.White, "D")
     "qwen3-coder-480b"     -> Mono(Color(0xFF6B5BFF), Color.White, "Q")
     "deepseek-v3-2"        -> Mono(Color(0xFF4D6BFE), Color.White, "D")
     "llama-4-maverick"     -> Mono(Color(0xFF0467DF), Color.White, "L")
